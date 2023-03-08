@@ -1,5 +1,8 @@
+/*
+  Global variables
+*/
 const spreadSheetContainer = document.getElementById('spreadsheet-container')
-const numberOfRowsAndCols = 100
+const numberOfRowsAndCols = 101 // create a 100 x 100 grid spreadsheet excluding header row and column
 const spreadsheet = []
 const alphabets = [
   'A',
@@ -53,9 +56,86 @@ class Cell {
   }
 }
 
+/*
+  State events
+*/
+const getElementFromRowCol = (row, col) => {
+  return document.querySelector('#cell_' + row + col)
+}
+
+const handleCellClick = (cell) => {
+  clearHeaderActiveStates()
+  const columnHeader = spreadsheet[0][cell.column]
+  const rowHeader = spreadsheet[cell.row][0]
+  const columnHeaderElement = getElementFromRowCol(
+    columnHeader.row,
+    columnHeader.column
+  )
+  const rowHeaderElement = getElementFromRowCol(rowHeader.row, rowHeader.column)
+  columnHeaderElement.classList.add('active')
+  rowHeaderElement.classList.add('active')
+  document.querySelector('#cell-status').innerHTML =
+    cell.columnName + cell.rowName
+}
+
+// create Map of cells with data
+const cellElementsData = new Map()
+const handleOnChange = (data, cell) => {
+  cell.data = data
+  // adds cell and data to collective Map using cellElement.id as key
+  cellElementsData.set('cell_' + cell.row + cell.column, cell.data)
+}
+
+const clearHeaderActiveStates = () => {
+  for (let i = 0; i < spreadsheet.length; i++) {
+    for (let j = 0; j < spreadsheet[i].length; j++) {
+      const cell = spreadsheet[i][j]
+      if (cell.isHeader) {
+        let cellElement = getElementFromRowCol(cell.row, cell.column)
+        cellElement.classList.remove('active')
+      }
+    }
+  }
+}
+
+/*
+  DOM population, creating the spreadsheet
+*/
+const createCellElement = (cell) => {
+  const cellElement = document.createElement('input')
+  cellElement.className = 'cell'
+  cellElement.id = 'cell_' + cell.row + cell.column
+  cellElement.value = cell.data
+  cellElement.disabled = cell.disabled
+
+  if (cell.isHeader) {
+    cellElement.classList.add('header')
+  }
+
+  cellElement.onclick = () => handleCellClick(cell)
+  cellElement.onchange = (e) => handleOnChange(e.target.value, cell)
+  return cellElement
+}
+
+const createSheet = () => {
+  spreadSheetContainer.innerHTML = ''
+  for (let i = 0; i < spreadsheet.length; i++) {
+    const rowContainerEl = document.createElement('div')
+    rowContainerEl.className = 'cell-row'
+
+    for (let j = 0; j < spreadsheet[i].length; j++) {
+      const cell = spreadsheet[i][j]
+      rowContainerEl.append(createCellElement(cell))
+    }
+    spreadSheetContainer.append(rowContainerEl)
+  }
+}
+
 // number of times the whole alphabet has been iterated through
 let counter = 0
 const getAlphabetHeader = (j) => {
+  // exit if we are on the header column
+  if (j === 0) return
   // make sure that the old value persists until after we've iterated past 'Z'
   const currentCount = counter
   if (counter === 0) {
@@ -80,6 +160,7 @@ const initSpreadsheet = () => {
   for (let i = 0; i < numberOfRowsAndCols; i++) {
     let spreadsheetRow = []
     for (let j = 0; j < numberOfRowsAndCols; j++) {
+      const alphabetHeader = getAlphabetHeader(j)
       let cellData = ''
       let isHeader = false
       let disabled = false
@@ -95,7 +176,7 @@ const initSpreadsheet = () => {
       if (i === 0) {
         isHeader = true
         disabled = true
-        cellData = getAlphabetHeader(j)
+        cellData = alphabetHeader
       }
 
       if (!cellData) {
@@ -103,8 +184,8 @@ const initSpreadsheet = () => {
       }
 
       const rowName = i
-      const columnName = getAlphabetHeader(j)
-      const cell = new Cell(
+      const columnName = alphabetHeader
+      let cell = new Cell(
         isHeader,
         disabled,
         cellData,
@@ -114,6 +195,12 @@ const initSpreadsheet = () => {
         columnName,
         false
       )
+
+      // check if current cell matches a cellElementsData MAP key
+      if (cellElementsData.get('cell_' + cell.row + cell.column)) {
+        // populate the cell with its existing value from the MAP
+        cell.cellData = cellElementsData.get('cell_' + cell.row + cell.column)
+      }
       spreadsheetRow.push(cell)
     }
     spreadsheet.push(spreadsheetRow)
@@ -121,75 +208,14 @@ const initSpreadsheet = () => {
   createSheet()
 }
 
-const createSheet = () => {
-  spreadSheetContainer.innerHTML = ''
-  for (let i = 0; i < spreadsheet.length; i++) {
-    const rowContainerEl = document.createElement('div')
-    rowContainerEl.className = 'cell-row'
-
-    for (let j = 0; j < spreadsheet[i].length; j++) {
-      const cell = spreadsheet[i][j]
-      rowContainerEl.append(createCellElement(cell))
-    }
-    spreadSheetContainer.append(rowContainerEl)
-  }
-}
-
-const createCellElement = (cell) => {
-  const cellElement = document.createElement('input')
-  cellElement.className = 'cell'
-  cellElement.id = 'cell_' + cell.row + cell.column
-  cellElement.value = cell.data
-  cellElement.disabled = cell.disabled
-
-  if (cell.isHeader) {
-    cellElement.classList.add('header')
-  }
-
-  cellElement.onclick = () => handleCellClick(cell)
-  cellElement.onchange = (e) => handleOnChange(e.target.value, cell)
-  return cellElement
-}
-
-const handleCellClick = (cell) => {
-  clearHeaderActiveStates()
-  const columnHeader = spreadsheet[0][cell.column]
-  const rowHeader = spreadsheet[cell.row][0]
-  const columnHeaderElement = getElementFromRowCol(
-    columnHeader.row,
-    columnHeader.column
-  )
-  const rowHeaderElement = getElementFromRowCol(rowHeader.row, rowHeader.column)
-  columnHeaderElement.classList.add('active')
-  rowHeaderElement.classList.add('active')
-  document.querySelector('#cell-status').innerHTML =
-    cell.columnName + cell.rowName
-}
-
-const handleOnChange = (data, cell) => {
-  cell.data = data
-}
-
-const clearHeaderActiveStates = () => {
-  for (let i = 0; i < spreadsheet.length; i++) {
-    for (let j = 0; j < spreadsheet[i].length; j++) {
-      const cell = spreadsheet[i][j]
-      if (cell.isHeader) {
-        let cellElement = getElementFromRowCol(cell.row, cell.column)
-        cellElement.classList.remove('active')
-      }
-    }
-  }
-}
-
-const getElementFromRowCol = (row, col) => {
-  return document.querySelector('#cell_' + row + col)
-}
-
 const clearSpreadsheet = () => {
   document
     .getElementById('clear-spreadsheet') // target button element
-    .attachEvent('onclick', alert('clicked')) // TODO: clear spreadsheet
+    .addEventListener(
+      'onclick',
+      spreadSheetContainer.parentNode.removeChild(spreadSheetContainer)
+    )
+  // TODO: make it re render the spreadsheet
 }
 
 initSpreadsheet()
