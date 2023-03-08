@@ -1,0 +1,59 @@
+body {
+  font-family: Helvetica, sans-serif;
+}
+
+.clear-button {
+  background-color: #297630;
+  color: white;
+  border-width: 0;
+  margin-top: 10px;
+  padding: 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.clear-button:hover {
+  cursor: pointer;
+  background-color: #539159;
+}
+
+.cell-row {
+  display: flex;
+}
+
+.cell {
+  width: 80px;
+  border: 1px solid #555;
+  height: 40px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cell.header {
+  text-align: center;
+  background: #ddd;
+}
+
+.cell.header.active {
+  background: dodgerblue;
+  color: white;
+}
+
+.cell:focus {
+  background: #ddd;
+  border: 3px solid dodgerblue;
+}
+
+#export-btn {
+  background: green;
+  color: white;
+  border: none;
+  padding: 10px;
+  display: inline-block;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
