@@ -1,9 +1,5 @@
-/*
-  Global variables
-*/
 const spreadSheetContainer = document.getElementById('spreadsheet-container')
 const numberOfRowsAndCols = 101 // create a 100 x 100 grid spreadsheet excluding header row and column
-const spreadsheet = []
 const alphabets = [
   'A',
   'B',
@@ -56,9 +52,6 @@ class Cell {
   }
 }
 
-/*
-  State events
-*/
 const getElementFromRowCol = (row, col) => {
   return document.querySelector('#cell_' + row + col)
 }
@@ -98,14 +91,16 @@ const clearHeaderActiveStates = () => {
   }
 }
 
-/*
-  DOM population, creating the spreadsheet
-*/
 const createCellElement = (cell) => {
   const cellElement = document.createElement('input')
   cellElement.className = 'cell'
   cellElement.id = 'cell_' + cell.row + cell.column
-  cellElement.value = cell.data
+  // check if current cell matches a cellElementsData MAP key
+  cellElement.value = cellElementsData.get(cellElement.id)
+    ? // populate the cell with its existing value from the MAP
+      cellElementsData.get(cellElement.id)
+    : // otherwise return empty
+      cell.data
   cellElement.disabled = cell.disabled
 
   if (cell.isHeader) {
@@ -117,23 +112,12 @@ const createCellElement = (cell) => {
   return cellElement
 }
 
-const createSheet = () => {
-  spreadSheetContainer.innerHTML = ''
-  for (let i = 0; i < spreadsheet.length; i++) {
-    const rowContainerEl = document.createElement('div')
-    rowContainerEl.className = 'cell-row'
-
-    for (let j = 0; j < spreadsheet[i].length; j++) {
-      const cell = spreadsheet[i][j]
-      rowContainerEl.append(createCellElement(cell))
-    }
-    spreadSheetContainer.append(rowContainerEl)
-  }
-}
-
 // number of times the whole alphabet has been iterated through
 let counter = 0
-const getAlphabetHeader = (j) => {
+const getAlphabetHeader = (j, refreshButtonClicked) => {
+  if (refreshButtonClicked) {
+    counter = 0
+  }
   // exit if we are on the header column
   if (j === 0) return
   // make sure that the old value persists until after we've iterated past 'Z'
@@ -157,10 +141,18 @@ const getAlphabetHeader = (j) => {
 }
 
 const initSpreadsheet = () => {
+  const spreadsheet = []
+  const refreshButtonClicked = spreadSheetContainer.innerHTML !== ''
+  if (refreshButtonClicked) {
+    spreadSheetContainer.innerHTML = ''
+  }
+
+  // populating columns
   for (let i = 0; i < numberOfRowsAndCols; i++) {
-    let spreadsheetRow = []
+    const spreadsheetRow = []
+    // populate rows
     for (let j = 0; j < numberOfRowsAndCols; j++) {
-      const alphabetHeader = getAlphabetHeader(j)
+      const alphabetHeader = getAlphabetHeader(j, refreshButtonClicked)
       let cellData = ''
       let isHeader = false
       let disabled = false
@@ -195,27 +187,30 @@ const initSpreadsheet = () => {
         columnName,
         false
       )
-
-      // check if current cell matches a cellElementsData MAP key
-      if (cellElementsData.get('cell_' + cell.row + cell.column)) {
-        // populate the cell with its existing value from the MAP
-        cell.cellData = cellElementsData.get('cell_' + cell.row + cell.column)
-      }
       spreadsheetRow.push(cell)
     }
     spreadsheet.push(spreadsheetRow)
   }
-  createSheet()
+  // create spreadsheet
+  spreadSheetContainer.innerHTML = ''
+  for (let i = 0; i < spreadsheet.length; i++) {
+    const rowContainerEl = document.createElement('div')
+    rowContainerEl.className = 'cell-row'
+
+    for (let j = 0; j < spreadsheet[i].length; j++) {
+      const cell = spreadsheet[i][j]
+      rowContainerEl.append(createCellElement(cell))
+    }
+    spreadSheetContainer.append(rowContainerEl)
+  }
 }
 
-const clearSpreadsheet = () => {
+// onclick action for clear SPreadsheet button
+const refresh = () => {
+  console.log('refresh button clicked')
   document
-    .getElementById('clear-spreadsheet') // target button element
-    .addEventListener(
-      'onclick',
-      spreadSheetContainer.parentNode.removeChild(spreadSheetContainer)
-    )
-  // TODO: make it re render the spreadsheet
+    .getElementById('clear-spreadsheet')
+    .addEventListener('onclick', initSpreadsheet())
 }
 
 initSpreadsheet()
